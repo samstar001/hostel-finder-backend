@@ -2,6 +2,7 @@
 //   2. Confirms the server can actually reach PostgreSQL — not just
 //      that the pool was created, but that a real query succeeds.
 
+
 import { query } from '../config/db.js';
 
 export const checkHealth = async (req, res) => {

@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+enum Role {
+  student
+  landlord
+  admin
+}
+
+enum VerificationStatus {
+  pending
+  verified
+  rejected
+}
+
+enum ReportStatus {
+  pending
+  reviewed
+  dismissed
+}
+
+enum InspectionStatus {
+  pending
+  accepted
+  declined
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role
+  school    String?
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  listings           Listing[]
+  reviews            Review[]
+  reports            Report[]
+  inspectionRequests InspectionRequest[]
+
+  @@map("users")
+}
+
+model Listing {
+  id                  Int                @id @default(autoincrement())
+  landlordId          Int                @map("landlord_id")
+  landlord            User               @relation(fields: [landlordId], references: [id])
+  title               String
+  description         String
+  price               Decimal            @db.Decimal(10, 2)
+  location            String
+  school              String
+  amenities           String[]
+  photos              String[]
+  verificationStatus  VerificationStatus @default(pending) @map("verification_status")
+  createdAt           DateTime           @default(now()) @map("created_at")
+
+  reviews            Review[]
+  reports            Report[]
+  inspectionRequests InspectionRequest[]
+
+  @@map("listings")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  listingId Int      @map("listing_id")
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  studentId Int      @map("student_id")
+  student   User     @relation(fields: [studentId], references: [id])
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("reviews")
+}
+
+model Report {
+  id         Int          @id @default(autoincrement())
+  listingId  Int          @map("listing_id")
+  listing    Listing      @relation(fields: [listingId], references: [id])
+  reporterId Int          @map("reporter_id")
+  reporter   User         @relation(fields: [reporterId], references: [id])
+  reason     String
+  status     ReportStatus @default(pending)
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  @@map("reports")
+}
+
+model InspectionRequest {
+  id        Int               @id @default(autoincrement())
+  listingId Int               @map("listing_id")
+  listing   Listing           @relation(fields: [listingId], references: [id])
+  studentId Int               @map("student_id")
+  student   User              @relation(fields: [studentId], references: [id])
+  status    InspectionStatus  @default(pending)
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  @@map("inspection_requests")
+}

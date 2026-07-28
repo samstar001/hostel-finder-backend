@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 import healthRoutes from './routes/healthRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
@@ -25,9 +26,8 @@ if (process.env.NODE_ENV !== 'test') {
 
 // --- Routes ---
 app.use('/api/health', healthRoutes);
-
+app.use('/api/auth', authRoutes);
 // Future feature routes get mounted here as they're built, e.g:
-// app.use('/api/auth', authRoutes);
 // app.use('/api/listings', listingRoutes);
 
 // Catch-all for unmatched routes

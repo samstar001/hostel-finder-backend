@@ -11,6 +11,7 @@ import morgan from 'morgan';
 import healthRoutes from './routes/healthRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
+import listingRoutes from './routes/listingRoutes.js';
 
 const app = express();
 
@@ -27,6 +28,7 @@ if (process.env.NODE_ENV !== 'test') {
 // --- Routes ---
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/listings', listingRoutes);
 // Future feature routes get mounted here as they're built, e.g:
 // app.use('/api/listings', listingRoutes);
 

@@ -37,7 +37,31 @@ export const createListing = async (req, res) => {
 
 export const getListings = async (req, res) => {
   try {
+    const { school, minPrice, maxPrice, location, amenities } = req.query;
+
+    const where = {};
+
+    if (school) {
+      where.school = school;
+    }
+
+    if (location) {
+      where.location = { contains: location, mode: 'insensitive' };
+    }
+
+    if (minPrice || maxPrice) {
+      where.price = {};
+      if (minPrice) where.price.gte = Number(minPrice);
+      if (maxPrice) where.price.lte = Number(maxPrice);
+    }
+
+    if (amenities) {
+      const amenitiesList = amenities.split(',').map((a) => a.trim());
+      where.amenities = { hasEvery: amenitiesList };
+    }
+
     const listings = await prisma.listing.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
     });
 

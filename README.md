@@ -13,8 +13,8 @@ Node.js (ESM) · Express.js · PostgreSQL · Prisma ORM (v6.19.2) · JWT · bcry
 | Database schema (Prisma) | ✅ Done |
 | Auth (register/login, JWT, role middleware) | ✅ Done |
 | Listings CRUD | ✅ Done |
-| Search & filter | ✅ In progress |
-| Photo upload | 🔧 Not started |
+| Search & filter | 🔧 In progress |
+| Photo upload | ⬜ Not started |
 | Reviews | ⬜ Not started |
 | Verification flow | ⬜ Not started |
 | Reports (scam flagging) | ⬜ Not started |
@@ -109,4 +109,6 @@ server.js
 Each feature is built on its own branch off `develop` (e.g. `feat/5-search-filter`), opened as a PR into `develop`, and merged once tested. `develop` merges into `main` at project completion.
 
 ## Next Up
-Photo upload (multer) for listing images.
+Search & filter query parameters on `GET /api/listings` (school, price range, location, amenities).
+
+

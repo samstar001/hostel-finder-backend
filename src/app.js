@@ -26,11 +26,11 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // --- Routes ---
-app.use('/api/health', healthRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/listings', listingRoutes);
+app.use('/api/v1/health', healthRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/listings', listingRoutes);
 // Future feature routes get mounted here as they're built, e.g:
-// app.use('/api/listings', listingRoutes);
+// app.use('/api/v1/listings', listingRoutes);
 
 // Catch-all for unmatched routes
 app.use((req, res) => {

@@ -3,7 +3,10 @@
 Group 16 · TechCrush Cohort 7 Capstone
 
 ## Stack
-Node.js (ESM) · Express.js · PostgreSQL · Prisma ORM (v6.19.2) · JWT · bcrypt · Postman
+Node.js (ESM) · Express.js · PostgreSQL · Prisma ORM (v6.19.2) · JWT · bcrypt · Resend (email) · Postman
+
+## Architecture
+REST API. All requests/responses are JSON. API is versioned via URL prefix (`/api/v1`).
 
 ## Status
 
@@ -11,14 +14,18 @@ Node.js (ESM) · Express.js · PostgreSQL · Prisma ORM (v6.19.2) · JWT · bcry
 |---|---|
 | Project setup & DB connection | ✅ Done |
 | Database schema (Prisma) | ✅ Done |
-| Auth (register/login, JWT, role middleware) | ✅ Done |
+| Auth — registration (3-step, OTP-verified, role-aware) | ✅ Done |
+| Auth — login | ✅ Done |
+| Auth — password reset (3-step, OTP-verified) | ✅ Done |
+| Role-based access control (JWT + role middleware) | ✅ Done |
 | Listings CRUD | ✅ Done |
-| Search & filter | 🔧 In progress |
+| Search & filter | ✅ Done |
 | Photo upload | ⬜ Not started |
 | Reviews | ⬜ Not started |
-| Verification flow | ⬜ Not started |
+| Listing verification flow | ⬜ Not started |
 | Reports (scam flagging) | ⬜ Not started |
 | Inspection requests | ⬜ Not started |
+| Listing redesign (categorized photos, hostel rules, legal docs) | ⬜ Planned, not started |
 
 ## Setup
 
@@ -31,12 +38,14 @@ Node.js (ESM) · Express.js · PostgreSQL · Prisma ORM (v6.19.2) · JWT · bcry
    - Ensure PostgreSQL is running locally
    - Create the database: `createdb hostel_finder_db`
 
-3. **Environment variables**
-   - Copy `.env.example` to `.env`
-   - Fill in your DB credentials and generate a real `JWT_SECRET`:
+3. **Environment variables** — copy `.env.example` to `.env` and fill in:
+   - Database credentials
+   - `JWT_SECRET` — generate with:
      ```
      node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
      ```
+   - `RESEND_API_KEY` — see Email section below
+   - `RESET_PASSWORD_URL` — placeholder frontend URL until real one is provided
 
 4. **Run migrations**
    ```
@@ -50,7 +59,7 @@ Node.js (ESM) · Express.js · PostgreSQL · Prisma ORM (v6.19.2) · JWT · bcry
 
 6. **Confirm it's working**
    ```
-   GET http://localhost:5000/api/health
+   GET http://localhost:5000/api/v1/health
    ```
    Expect `{ "success": true, "database_time": "..." }`
 
@@ -75,40 +84,67 @@ src/
 │   └── errorHandler.js
 ├── utils/
 │   ├── hashPassword.js
-│   └── generateToken.js
+│   ├── generateToken.js
+│   ├── generateOtp.js
+│   └── sendEmail.js       # Resend wrapper
 └── app.js
 prisma/
-├── schema.prisma          # User, Listing, Review, Report, InspectionRequest
+├── schema.prisma          # User, PendingRegistration, Listing, Review, Report, InspectionRequest
 └── migrations/
 server.js
 ```
 
-## API Endpoints (so far)
+## API Endpoints
+
+Base URL: `/api/v1`
 
 ### Health
 | Method | Endpoint | Auth |
 |---|---|---|
-| GET | `/api/health` | Public |
+| GET | `/health` | Public |
 
-### Auth
+### Auth — Registration (3-step)
 | Method | Endpoint | Auth |
 |---|---|---|
-| POST | `/api/auth/register` | Public |
-| POST | `/api/auth/login` | Public |
+| POST | `/auth/register/initiate` | Public |
+| POST | `/auth/register/verify-otp` | Public |
+| POST | `/auth/register/complete` | Public |
+
+### Auth — Login & Password Reset
+| Method | Endpoint | Auth |
+|---|---|---|
+| POST | `/auth/login` | Public |
+| POST | `/auth/forgot-password` | Public |
+| POST | `/auth/verify-reset-otp` | Public |
+| POST | `/auth/reset-password` | Public |
 
 ### Listings
 | Method | Endpoint | Auth |
 |---|---|---|
-| GET | `/api/listings` | Public |
-| GET | `/api/listings/:id` | Public |
-| POST | `/api/listings` | Landlord only |
-| PUT | `/api/listings/:id` | Landlord only (own listings) |
-| DELETE | `/api/listings/:id` | Landlord only (own listings) |
+| GET | `/listings` | Public (supports `?school=`, `?location=`, `?minPrice=`, `?maxPrice=`, `?amenities=`) |
+| GET | `/listings/:id` | Public |
+| POST | `/listings` | Landlord only |
+| PUT | `/listings/:id` | Landlord only (own listings) |
+| DELETE | `/listings/:id` | Landlord only (own listings) |
+
+Full request/response examples: see `hostel-finder-api-docs.md` (shared with frontend/mobile).
+
+## Auth Design Notes
+
+- **JWT**, stateless, `Authorization: Bearer <token>`, 7-day expiry, payload limited to `{ id, role }`
+- **Registration** is 3 steps to match the product's actual UI (Create Account → Verify Email OTP → Complete Registration with password). Incomplete signups live in a separate `PendingRegistration` table, never in `users`, until verified and completed.
+- **Role-specific fields**: students get `institution`/`housingPreference`; landlords get `homeAddress`/`nin`. Both optional at the schema level; required-ness enforced in the controller based on role.
+- **Password reset** is also 3 steps (request OTP → verify OTP → set new password via a short-lived `resetToken`), matching the same OTP pattern as registration.
+- **Sensitive fields** (`password`, `nin`, all reset tokens/OTPs) are never included in any API response.
+
+## Email (Resend)
+OTP emails (registration + password reset) are sent via Resend, using the shared `onboarding@resend.dev` test sender. Requires `RESEND_API_KEY` in `.env`. Currently only deliverable to the email address the Resend account is registered under — a verified custom domain is needed to send to arbitrary addresses (a task for deployment, not local dev).
+
+## Environments
+Currently **development only** — running locally against a local PostgreSQL instance. No staging or production deployment yet. Base URL for now: `http://localhost:5000/api/v1`. A hosted (Render/Railway) environment is planned once core features are further along, so frontend/mobile can integrate against something other than a teammate's laptop.
 
 ## Branching workflow
-Each feature is built on its own branch off `develop` (e.g. `feat/5-search-filter`), opened as a PR into `develop`, and merged once tested. `develop` merges into `main` at project completion.
+Each feature is built on its own branch off `develop`, using descriptive names (e.g. `feat/otp-registration-and-reset`, `feat/photo-upload`), opened as a PR into `develop`, and merged once tested. `develop` merges into `main` at project completion.
 
 ## Next Up
-Search & filter query parameters on `GET /api/listings` (school, price range, location, amenities).
-
-
+Photo/profile picture upload (multer), then the Listing redesign (categorized photos, hostel rules, legal documents) surfaced from the Product Design team's screens.

@@ -37,16 +37,23 @@ enum InspectionStatus {
 }
 
 model User {
-  id                Int      @id @default(autoincrement())
-  name              String
-  email             String   @unique
-  password          String
-  role              Role
-  school            String?
-  verified          Boolean  @default(false)
-  resetToken        String?
-  resetTokenExpiry  DateTime?
-  createdAt         DateTime @default(now()) @map("created_at")
+  id                 Int      @id @default(autoincrement())
+  name               String
+  email              String   @unique
+  phone              String?
+  password           String
+  role               Role
+  institution        String?
+  housingPreference  String?  @map("housing_preference")
+  homeAddress        String?  @map("home_address")
+  nin                String?
+  profilePicture     String?  @map("profile_picture")
+  verified           Boolean  @default(false)
+  resetOtp           String?
+  resetOtpExpiry     DateTime?
+  resetToken         String?
+  resetTokenExpiry   DateTime?
+  createdAt          DateTime @default(now()) @map("created_at")
 
   listings           Listing[]
   reviews            Review[]
@@ -54,6 +61,20 @@ model User {
   inspectionRequests InspectionRequest[]
 
   @@map("users")
+}
+
+model PendingRegistration {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  phone     String
+  role      Role
+  otp       String?
+  otpExpiry DateTime?
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("pending_registrations")
 }
 
 model Listing {

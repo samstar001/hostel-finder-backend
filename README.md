@@ -20,7 +20,7 @@ REST API. All requests/responses are JSON. API is versioned via URL prefix (`/ap
 | Role-based access control (JWT + role middleware) | ✅ Done |
 | Listings CRUD | ✅ Done |
 | Search & filter | ✅ Done |
-| Photo upload | ⬜ Not started |
+| Photo upload (listings + profile pictures, via Cloudinary) | ✅ Done |
 | Reviews | ⬜ Not started |
 | Listing verification flow | ⬜ Not started |
 | Reports (scam flagging) | ⬜ Not started |
@@ -117,6 +117,7 @@ Base URL: `/api/v1`
 | POST | `/auth/forgot-password` | Public |
 | POST | `/auth/verify-reset-otp` | Public |
 | POST | `/auth/reset-password` | Public |
+| POST | `/auth/profile-picture` | Any authenticated user |
 
 ### Listings
 | Method | Endpoint | Auth |
@@ -126,6 +127,7 @@ Base URL: `/api/v1`
 | POST | `/listings` | Landlord only |
 | PUT | `/listings/:id` | Landlord only (own listings) |
 | DELETE | `/listings/:id` | Landlord only (own listings) |
+| POST | `/listings/:id/photos` | Landlord only (own listings) |
 
 Full request/response examples: see `hostel-finder-api-docs.md` (shared with frontend/mobile).
 
@@ -146,5 +148,8 @@ Currently **development only** — running locally against a local PostgreSQL in
 ## Branching workflow
 Each feature is built on its own branch off `develop`, using descriptive names (e.g. `feat/otp-registration-and-reset`, `feat/photo-upload`), opened as a PR into `develop`, and merged once tested. `develop` merges into `main` at project completion.
 
+## File Uploads (Cloudinary)
+Listing photos and profile pictures are uploaded via `multipart/form-data` and stored on Cloudinary (free tier). Requires `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` in `.env`. Allowed formats: jpg, jpeg, png, webp. Max file size: 5MB. Listing photos: up to 5 per upload request, field name `photos`. Profile picture: single file, field name `profilePicture`.
+
 ## Next Up
-Photo/profile picture upload (multer), then the Listing redesign (categorized photos, hostel rules, legal documents) surfaced from the Product Design team's screens.
+Listing redesign — categorized photos (compound/room/kitchen/bathroom/toilet), hostel rules, legal document uploads, soft delete — based on Product Design's screens.

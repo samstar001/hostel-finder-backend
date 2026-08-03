@@ -144,3 +144,39 @@ export const deleteListing = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+// Uploads one or more photos to Cloudinary and attaches their URLs
+// to an existing listing. Landlord-only, and only for their own listing.
+export const uploadListingPhotos = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const existing = await prisma.listing.findUnique({ where: { id: Number(id) } });
+
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'Listing not found' });
+    }
+
+    if (existing.landlordId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only upload photos to your own listings',
+      });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: 'No files uploaded' });
+    }
+
+    const newPhotoUrls = req.files.map((file) => file.path);
+
+    const updated = await prisma.listing.update({
+      where: { id: Number(id) },
+      data: { photos: [...existing.photos, ...newPhotoUrls] },
+    });
+
+    res.status(200).json({ success: true, message: 'Photos uploaded', listing: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};

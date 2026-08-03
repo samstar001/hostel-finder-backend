@@ -316,3 +316,25 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+
+// Uploads a single profile picture to Cloudinary and saves the URL
+// on the logged-in user's own record.
+export const uploadProfilePicture = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { profilePicture: req.file.path },
+    });
+
+    const { password: _, nin: __, resetOtp: ___, resetOtpExpiry: ____, resetToken: _____, resetTokenExpiry: ______, ...safeUser } = updatedUser;
+
+    res.status(200).json({ success: true, message: 'Profile picture updated', user: safeUser });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};

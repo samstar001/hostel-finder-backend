@@ -4,12 +4,14 @@
 // only their own listings (enforced inside the controller).
 
 import express from 'express';
+import { upload } from '../config/cloudinaryUpload.js';
 import {
   createListing,
   getListings,
   getListingById,
   updateListing,
   deleteListing,
+  uploadListingPhotos,
 } from '../controllers/listingController.js';
 import authMiddleware from '../middleware/auth.js';
 import roleCheck from '../middleware/roleCheck.js';
@@ -22,6 +24,7 @@ router.get('/:id', getListingById);
 
 // Protected — landlord only
 router.post('/', authMiddleware, roleCheck(['landlord']), createListing);
+router.post('/:id/photos', authMiddleware, roleCheck(['landlord']), upload.array('photos', 5), uploadListingPhotos);
 router.put('/:id', authMiddleware, roleCheck(['landlord']), updateListing);
 router.delete('/:id', authMiddleware, roleCheck(['landlord']), deleteListing);
 

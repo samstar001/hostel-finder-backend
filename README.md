@@ -122,12 +122,17 @@ Base URL: `/api/v1`
 ### Listings
 | Method | Endpoint | Auth |
 |---|---|---|
-| GET | `/listings` | Public (supports `?school=`, `?location=`, `?minPrice=`, `?maxPrice=`, `?amenities=`) |
-| GET | `/listings/:id` | Public |
+| GET | `/listings` | Public (excludes soft-deleted; supports `?school=`, `?location=`, `?minPrice=`, `?maxPrice=`, `?amenities=`) |
+| GET | `/listings/deleted` | Landlord only (own deleted listings) |
+| GET | `/listings/:id` | Public (excludes soft-deleted) |
 | POST | `/listings` | Landlord only |
 | PUT | `/listings/:id` | Landlord only (own listings) |
-| DELETE | `/listings/:id` | Landlord only (own listings) |
-| POST | `/listings/:id/photos` | Landlord only (own listings) |
+| DELETE | `/listings/:id` | Landlord only (own listings) — soft delete |
+| POST | `/listings/:id/photos/compound` | Landlord only (own listings) |
+| POST | `/listings/:id/photos/room` | Landlord only (own listings) |
+| POST | `/listings/:id/photos/kitchen` | Landlord only (own listings) |
+| POST | `/listings/:id/photos/bathroom` | Landlord only (own listings) |
+| POST | `/listings/:id/photos/toilet` | Landlord only (own listings) |
 
 Full request/response examples: see `hostel-finder-api-docs.md` (shared with frontend/mobile).
 
@@ -148,8 +153,11 @@ Currently **development only** — running locally against a local PostgreSQL in
 ## Branching workflow
 Each feature is built on its own branch off `develop`, using descriptive names (e.g. `feat/otp-registration-and-reset`, `feat/photo-upload`), opened as a PR into `develop`, and merged once tested. `develop` merges into `main` at project completion.
 
+## Listing Design Notes
+Photos are stored as 5 named fields (compound/room/kitchen/bathroom/toilet), not a generic array — each category uploaded via its own endpoint, matching the product design's per-category upload UI. Deletes are soft (`isDeleted`/`deletedAt`) rather than permanent, so landlords can view what they've removed via `GET /listings/deleted`. Public listing queries always exclude soft-deleted rows.
+
 ## File Uploads (Cloudinary)
 Listing photos and profile pictures are uploaded via `multipart/form-data` and stored on Cloudinary (free tier). Requires `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` in `.env`. Allowed formats: jpg, jpeg, png, webp. Max file size: 5MB. Listing photos: up to 5 per upload request, field name `photos`. Profile picture: single file, field name `profilePicture`.
 
 ## Next Up
-Listing redesign — categorized photos (compound/room/kitchen/bathroom/toilet), hostel rules, legal document uploads, soft delete — based on Product Design's screens.
+Reviews (students reviewing listings), then Reports (scam flagging) and Inspection Requests.

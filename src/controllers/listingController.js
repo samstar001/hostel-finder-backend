@@ -7,7 +7,7 @@ import { prisma } from '../config/prismaClient.js';
 
 export const createListing = async (req, res) => {
   try {
-    const { title, description, price, location, school, amenities, photos } = req.body;
+    const { title, description, price, location, school, amenities, hostelRules } = req.body;
 
     if (!title || !description || !price || !location || !school) {
       return res.status(400).json({
@@ -24,7 +24,7 @@ export const createListing = async (req, res) => {
         location,
         school,
         amenities: amenities || [],
-        photos: photos || [],
+        hostelRules: hostelRules || [],
         landlordId: req.user.id,
       },
     });
@@ -39,25 +39,17 @@ export const getListings = async (req, res) => {
   try {
     const { school, minPrice, maxPrice, location, amenities } = req.query;
 
-    const where = {};
+    const where = { isDeleted: false };  // ← the important addition
 
-    if (school) {
-      where.school = school;
-    }
-
-    if (location) {
-      where.location = { contains: location, mode: 'insensitive' };
-    }
-
+    if (school) where.school = school;
+    if (location) where.location = { contains: location, mode: 'insensitive' };
     if (minPrice || maxPrice) {
       where.price = {};
       if (minPrice) where.price.gte = Number(minPrice);
       if (maxPrice) where.price.lte = Number(maxPrice);
     }
-
     if (amenities) {
-      const amenitiesList = amenities.split(',').map((a) => a.trim());
-      where.amenities = { hasEvery: amenitiesList };
+      where.amenities = { hasEvery: amenities.split(',').map((a) => a.trim()) };
     }
 
     const listings = await prisma.listing.findMany({
@@ -75,8 +67,8 @@ export const getListingById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const listing = await prisma.listing.findUnique({
-      where: { id: Number(id) },
+    const listing = await prisma.listing.findFirst({
+      where: { id: Number(id), isDeleted: false },  // ← findFirst, not findUnique, since we now filter on 2 conditions
       include: { landlord: { select: { id: true, name: true, email: true, verified: true } } },
     });
 
@@ -126,7 +118,7 @@ export const deleteListing = async (req, res) => {
 
     const existing = await prisma.listing.findUnique({ where: { id: Number(id) } });
 
-    if (!existing) {
+    if (!existing || existing.isDeleted) {
       return res.status(404).json({ success: false, message: 'Listing not found' });
     }
 
@@ -137,9 +129,27 @@ export const deleteListing = async (req, res) => {
       });
     }
 
-    await prisma.listing.delete({ where: { id: Number(id) } });
+    const deleted = await prisma.listing.update({
+      where: { id: Number(id) },
+      data: { isDeleted: true, deletedAt: new Date() },
+    });
 
-    res.status(200).json({ success: true, message: 'Listing deleted' });
+    res.status(200).json({ success: true, message: 'Listing deleted', listing: deleted });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Landlord-only. Shows only the requesting landlord's own soft-deleted
+// listings — not everyone's, and not a public endpoint.
+export const getDeletedListings = async (req, res) => {
+  try {
+    const listings = await prisma.listing.findMany({
+      where: { landlordId: req.user.id, isDeleted: true },
+      orderBy: { deletedAt: 'desc' },
+    });
+
+    res.status(200).json({ success: true, count: listings.length, listings });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -180,3 +190,46 @@ export const uploadListingPhotos = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+
+// Shared logic for all 5 category-specific photo uploads — takes the
+// Prisma field name to update, returns an Express handler for it.
+const uploadCategoryPhoto = (fieldName) => async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const existing = await prisma.listing.findFirst({
+      where: { id: Number(id), isDeleted: false },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'Listing not found' });
+    }
+
+    if (existing.landlordId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only upload photos to your own listings',
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    const updated = await prisma.listing.update({
+      where: { id: Number(id) },
+      data: { [fieldName]: req.file.path },
+    });
+
+    res.status(200).json({ success: true, message: `${fieldName} updated`, listing: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const uploadPhotoCompound = uploadCategoryPhoto('photoCompound');
+export const uploadPhotoRoom = uploadCategoryPhoto('photoRoom');
+export const uploadPhotoKitchen = uploadCategoryPhoto('photoKitchen');
+export const uploadPhotoBathroom = uploadCategoryPhoto('photoBathroom');
+export const uploadPhotoToilet = uploadCategoryPhoto('photoToilet');

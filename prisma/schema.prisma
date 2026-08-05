@@ -116,6 +116,7 @@ model Review {
   comment   String?
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@unique([listingId, studentId])
   @@map("reviews")
 }
 

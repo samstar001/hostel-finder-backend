@@ -21,7 +21,7 @@ REST API. All requests/responses are JSON. API is versioned via URL prefix (`/ap
 | Listings CRUD | ✅ Done |
 | Search & filter | ✅ Done |
 | Photo upload (listings + profile pictures, via Cloudinary) | ✅ Done |
-| Reviews | ⬜ Not started |
+| Reviews | ✅ Done |
 | Listing verification flow | ⬜ Not started |
 | Reports (scam flagging) | ⬜ Not started |
 | Inspection requests | ⬜ Not started |
@@ -134,6 +134,12 @@ Base URL: `/api/v1`
 | POST | `/listings/:id/photos/bathroom` | Landlord only (own listings) |
 | POST | `/listings/:id/photos/toilet` | Landlord only (own listings) |
 
+### Reviews
+| Method | Endpoint | Auth |
+|---|---|---|
+| POST | `/listings/:id/reviews` | Any authenticated user (one review per listing) |
+| GET | `/listings/:id/reviews` | Public |
+
 Full request/response examples: see `hostel-finder-api-docs.md` (shared with frontend/mobile).
 
 ## Auth Design Notes
@@ -159,5 +165,8 @@ Photos are stored as 5 named fields (compound/room/kitchen/bathroom/toilet), not
 ## File Uploads (Cloudinary)
 Listing photos and profile pictures are uploaded via `multipart/form-data` and stored on Cloudinary (free tier). Requires `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` in `.env`. Allowed formats: jpg, jpeg, png, webp. Max file size: 5MB. Listing photos: up to 5 per upload request, field name `photos`. Profile picture: single file, field name `profilePicture`.
 
+## Review Design Notes
+One review per user per listing, enforced by a database-level unique constraint (`@@unique([listingId, studentId])`) rather than an application-level check alone — avoids race conditions on near-simultaneous duplicate submissions. `GET` returns individual reviews plus a computed `averageRating`.
+
 ## Next Up
-Reviews (students reviewing listings), then Reports (scam flagging) and Inspection Requests.
+Reports (scam/suspicious listing flagging), then Inspection Requests.

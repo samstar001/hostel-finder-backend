@@ -120,19 +120,30 @@ model Review {
   @@map("reviews")
 }
 
+enum ReportCategory {
+  suspicious_listing
+  fake_photos
+  scam_fraud
+  inappropriate_behaviour
+  fake_contact_info
+  impersonation
+  other
+}
+
 model Report {
-  id         Int          @id @default(autoincrement())
-  listingId  Int          @map("listing_id")
-  listing    Listing      @relation(fields: [listingId], references: [id])
-  reporterId Int          @map("reporter_id")
-  reporter   User         @relation(fields: [reporterId], references: [id])
-  reason     String
-  status     ReportStatus @default(pending)
-  createdAt  DateTime     @default(now()) @map("created_at")
+  id          Int            @id @default(autoincrement())
+  listingId   Int            @map("listing_id")
+  listing     Listing        @relation(fields: [listingId], references: [id])
+  reporterId  Int            @map("reporter_id")
+  reporter    User           @relation(fields: [reporterId], references: [id])
+  category    ReportCategory
+  description String
+  evidence    String[]
+  status      ReportStatus   @default(pending)
+  createdAt   DateTime       @default(now()) @map("created_at")
 
   @@map("reports")
 }
-
 model InspectionRequest {
   id        Int               @id @default(autoincrement())
   listingId Int               @map("listing_id")

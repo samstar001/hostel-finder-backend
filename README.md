@@ -22,10 +22,9 @@ REST API. All requests/responses are JSON. API is versioned via URL prefix (`/ap
 | Search & filter | ✅ Done |
 | Photo upload (listings + profile pictures, via Cloudinary) | ✅ Done |
 | Reviews | ✅ Done |
-| Listing verification flow | ⬜ Not started |
+| Listing verification flow (admin approve/reject) | ✅ Done |
 | Reports (scam flagging) | ⬜ Not started |
 | Inspection requests | ⬜ Not started |
-| Listing redesign (categorized photos, hostel rules, legal docs) | ⬜ Planned, not started |
 
 ## Setup
 
@@ -68,28 +67,33 @@ REST API. All requests/responses are JSON. API is versioned via URL prefix (`/ap
 ```
 src/
 ├── config/
-│   ├── db.js              # raw PostgreSQL pool (used by health check)
-│   └── prismaClient.js    # shared Prisma Client instance
+│   ├── db.js                  # raw PostgreSQL pool (used by health check)
+│   ├── prismaClient.js        # shared Prisma Client instance
+│   └── cloudinaryUpload.js    # Cloudinary config + multer upload middleware
 ├── controllers/
 │   ├── healthController.js
 │   ├── authController.js
-│   └── listingController.js
+│   ├── listingController.js
+│   ├── reviewController.js
+│   └── adminController.js
 ├── routes/
 │   ├── healthRoutes.js
 │   ├── authRoutes.js
-│   └── listingRoutes.js
+│   ├── listingRoutes.js
+│   ├── reviewRoutes.js        # nested under /listings/:id/reviews
+│   └── adminRoutes.js
 ├── middleware/
-│   ├── auth.js            # verifies JWT, attaches req.user
-│   ├── roleCheck.js       # restricts routes by role
+│   ├── auth.js                # verifies JWT, attaches req.user
+│   ├── roleCheck.js           # restricts routes by role
 │   └── errorHandler.js
 ├── utils/
 │   ├── hashPassword.js
 │   ├── generateToken.js
 │   ├── generateOtp.js
-│   └── sendEmail.js       # Resend wrapper
+│   └── sendEmail.js           # Resend wrapper
 └── app.js
 prisma/
-├── schema.prisma          # User, PendingRegistration, Listing, Review, Report, InspectionRequest
+├── schema.prisma              # User, PendingRegistration, Listing, Review, Report, InspectionRequest
 └── migrations/
 server.js
 ```
@@ -140,7 +144,15 @@ Base URL: `/api/v1`
 | POST | `/listings/:id/reviews` | Any authenticated user (one review per listing) |
 | GET | `/listings/:id/reviews` | Public |
 
-Full request/response examples: see `hostel-finder-api-docs.md` (shared with frontend/mobile).
+### Admin
+*(All routes require `role: admin`)*
+| Method | Endpoint | Auth |
+|---|---|---|
+| GET | `/admin/listings/pending` | Admin only |
+| PATCH | `/admin/listings/:id/verify` | Admin only |
+| PATCH | `/admin/listings/:id/reject` | Admin only |
+
+
 
 ## Auth Design Notes
 
@@ -167,6 +179,9 @@ Listing photos and profile pictures are uploaded via `multipart/form-data` and s
 
 ## Review Design Notes
 One review per user per listing, enforced by a database-level unique constraint (`@@unique([listingId, studentId])`) rather than an application-level check alone — avoids race conditions on near-simultaneous duplicate submissions. `GET` returns individual reviews plus a computed `averageRating`.
+
+## Admin Design Notes
+Admin is a `role` value on the same `User` table — no separate login system. There is deliberately no public way to self-register as admin; admin accounts are created by directly promoting a user's role in the database. Full admin panel scope (analytics, messaging, content management, etc., per the product's Figma admin flow) is out of scope for this capstone — only verification-related actions are built.
 
 ## Next Up
 Reports (scam/suspicious listing flagging), then Inspection Requests.

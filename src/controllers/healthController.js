@@ -1,18 +1,16 @@
-// A health check that confirms the Express server is up and responding.
-//   2. Confirms the server can actually reach PostgreSQL — not just
-//      that the pool was created, but that a real query succeeds.
+// Confirms the Express server is up AND that Prisma can actually
+// reach the database — runs a real query, not just a connection check.
 
-
-import { query } from '../config/db.js';
+import { prisma } from '../config/prismaClient.js';
 
 export const checkHealth = async (req, res) => {
   try {
-    const result = await query('SELECT NOW() AS current_time');
+    const result = await prisma.$queryRaw`SELECT NOW() AS current_time`;
 
     res.status(200).json({
       success: true,
       message: 'API is running and database is connected',
-      database_time: result.rows[0].current_time,
+      database_time: result[0].current_time,
     });
   } catch (err) {
     res.status(500).json({

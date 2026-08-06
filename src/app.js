@@ -13,6 +13,7 @@ import authRoutes from './routes/authRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import listingRoutes from './routes/listingRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/listings', listingRoutes);
 app.use('/api/v1/listings/:id/reviews', reviewRoutes);
+app.use('/api/v1/admin', adminRoutes);
 // Future feature routes get mounted here as they're built, e.g:
 // app.use('/api/v1/listings', listingRoutes);
 

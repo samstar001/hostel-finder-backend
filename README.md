@@ -166,7 +166,9 @@ Base URL: `/api/v1`
 OTP emails (registration + password reset) are sent via Resend, using the shared `onboarding@resend.dev` test sender. Requires `RESEND_API_KEY` in `.env`. Currently only deliverable to the email address the Resend account is registered under — a verified custom domain is needed to send to arbitrary addresses (a task for deployment, not local dev).
 
 ## Environments
-Currently **development only** — running locally against a local PostgreSQL instance. No staging or production deployment yet. Base URL for now: `http://localhost:5000/api/v1`. A hosted (Render/Railway) environment is planned once core features are further along, so frontend/mobile can integrate against something other than a teammate's laptop.
+- **Development:** local, `http://localhost:5000/api/v1`
+- **Production:** Render, `https://hostel-finder-backend-ht3x.onrender.com/api/v1`
+No separate staging environment — team tests directly against production for now, given project timeline.
 
 ## Branching workflow
 Each feature is built on its own branch off `develop`, using descriptive names (e.g. `feat/otp-registration-and-reset`, `feat/photo-upload`), opened as a PR into `develop`, and merged once tested. `develop` merges into `main` at project completion.
@@ -182,6 +184,20 @@ One review per user per listing, enforced by a database-level unique constraint 
 
 ## Admin Design Notes
 Admin is a `role` value on the same `User` table — no separate login system. There is deliberately no public way to self-register as admin; admin accounts are created by directly promoting a user's role in the database. Full admin panel scope (analytics, messaging, content management, etc., per the product's Figma admin flow) is out of scope for this capstone — only verification-related actions are built.
+
+## Deployment
+Hosted on Render (free tier).
+
+- **Live URL:** https://hostel-finder-backend-ht3x.onrender.com/api/v1
+- **Database:** Render PostgreSQL (free tier)
+- Deploys automatically from `main` on every push
+- ⚠️ Free tier spins down after 15 min of inactivity — first request after idle may take 30-60s to respond
+
+### Deploying changes
+1. Merge feature branches into `develop`, test locally
+2. Merge `develop` → `main`
+3. Push to `main` — Render auto-deploys
+4. If the change includes a new Prisma migration, run it against production manually:
 
 ## Next Up
 Reports (scam/suspicious listing flagging), then Inspection Requests.

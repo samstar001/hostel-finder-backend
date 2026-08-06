@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+enum Role {
+  student
+  landlord
+  admin
+}
+
+enum VerificationStatus {
+  pending
+  verified
+  rejected
+}
+
+enum ReportStatus {
+  pending
+  reviewed
+  dismissed
+}
+
+enum InspectionStatus {
+  pending
+  accepted
+  declined
+}
+
+model User {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  email              String   @unique
+  phone              String?
+  password           String
+  role               Role
+  institution        String?
+  housingPreference  String?  @map("housing_preference")
+  homeAddress        String?  @map("home_address")
+  nin                String?
+  profilePicture     String?  @map("profile_picture")
+  verified           Boolean  @default(false)
+  resetOtp           String?
+  resetOtpExpiry     DateTime?
+  resetToken         String?
+  resetTokenExpiry   DateTime?
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  listings           Listing[]
+  reviews            Review[]
+  reports            Report[]
+  inspectionRequests InspectionRequest[]
+
+  @@map("users")
+}
+
+model PendingRegistration {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  phone     String
+  role      Role
+  otp       String?
+  otpExpiry DateTime?
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("pending_registrations")
+}
+
+model Listing {
+  id                  Int                @id @default(autoincrement())
+  landlordId          Int                @map("landlord_id")
+  landlord            User               @relation(fields: [landlordId], references: [id])
+  title               String
+  description         String
+  price               Decimal            @db.Decimal(10, 2)
+  location            String
+  school              String
+  amenities           String[]
+  hostelRules         String[]           @map("hostel_rules")
+  photoCompound        String?           @map("photo_compound")
+  photoRoom            String?           @map("photo_room")
+  photoKitchen         String?           @map("photo_kitchen")
+  photoBathroom        String?           @map("photo_bathroom")
+  photoToilet          String?           @map("photo_toilet")
+  legalDocuments       String[]          @map("legal_documents")
+  verificationStatus  VerificationStatus @default(pending) @map("verification_status")
+  isDeleted           Boolean            @default(false) @map("is_deleted")
+  deletedAt           DateTime?          @map("deleted_at")
+  createdAt           DateTime           @default(now()) @map("created_at")
+
+  reviews            Review[]
+  reports            Report[]
+  inspectionRequests InspectionRequest[]
+
+  @@map("listings")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  listingId Int      @map("listing_id")
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  studentId Int      @map("student_id")
+  student   User     @relation(fields: [studentId], references: [id])
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([listingId, studentId])
+  @@map("reviews")
+}
+
+model Report {
+  id         Int          @id @default(autoincrement())
+  listingId  Int          @map("listing_id")
+  listing    Listing      @relation(fields: [listingId], references: [id])
+  reporterId Int          @map("reporter_id")
+  reporter   User         @relation(fields: [reporterId], references: [id])
+  reason     String
+  status     ReportStatus @default(pending)
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  @@map("reports")
+}
+
+model InspectionRequest {
+  id        Int               @id @default(autoincrement())
+  listingId Int               @map("listing_id")
+  listing   Listing           @relation(fields: [listingId], references: [id])
+  studentId Int               @map("student_id")
+  student   User              @relation(fields: [studentId], references: [id])
+  status    InspectionStatus  @default(pending)
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  @@map("inspection_requests")
+}

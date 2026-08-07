@@ -26,7 +26,7 @@ REST API. All requests/responses are JSON. Versioned via URL prefix (`/api/v1`).
 | Listing verification flow (admin approve/reject) | ✅ Done |
 | Reports (scam flagging, categorized, with evidence upload) | ✅ Done |
 | Production deployment (Render) | ✅ Done |
-| Inspection requests | ⬜ Not started |
+| Inspection requests | ✅ Done |
 
 ## Setup
 
@@ -152,6 +152,14 @@ Base URL: `/api/v1` — full request/response examples in `hostel-finder-api-doc
 | GET | `/admin/reports` | Admin |
 | PATCH | `/admin/reports/:id/resolve` | Admin |
 
+### Inspection Requests
+| Method | Endpoint | Auth |
+|---|---|---|
+| POST | `/listings/:id/inspection-requests` | Student only |
+| GET | `/listings/:id/inspection-requests` | Landlord only (own listings) |
+| PATCH | `/listings/:id/inspection-requests/:requestId/respond` | Landlord only (own listings) |
+| GET | `/auth/my-inspection-requests` | Student — own requests, across all listings |
+
 ## Design Notes
 
 **Auth:** JWT, stateless, `Authorization: Bearer <token>`, 7-day expiry, payload `{ id, role }` only. Registration and password reset are both 3-step OTP flows matching the product's UI. Incomplete signups live in `PendingRegistration`, never in `users`. Role-specific fields (`institution`/`housingPreference` for students, `homeAddress`/`nin` for landlords) are optional at the schema level, required by role in application code.
@@ -163,6 +171,9 @@ Base URL: `/api/v1` — full request/response examples in `hostel-finder-api-doc
 **Reports:** Structured `category` enum + free-text `description`, matching the product design. No uniqueness constraint — multiple different users reporting the same listing is a meaningful trust signal, not something to prevent. Evidence files uploaded separately, reporter-only.
 
 **Admin:** Just a `role` value on the same `User` table — no separate login system, no public self-registration. Promoted directly in the database. Scope is intentionally limited to listing verification and report resolution — the full Figma admin flow (analytics, messaging, notifications, content management) is out of scope for this capstone.
+
+**Inspection Request:**
+Students only can create requests (landlords blocked via role check — booking a viewing of your own listing doesn't make sense). `requestedDate` validated as a real, non-past date. A landlord can only view/respond to requests on listings they personally own — verified via a nested `include` on the request's related listing, not a separate query.
 
 ## File Uploads (Cloudinary)
 Free tier. Requires `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`. Allowed formats: jpg, jpeg, png, webp. Max 5MB/file. Used for: listing category photos, profile pictures, report evidence.
@@ -196,5 +207,4 @@ Hosted on **Render** (free tier).
 Feature branches off `develop`, descriptive names (e.g. `feat/reports`, not numbered), PR into `develop`, merged once tested. `develop` → `main` for releases/deploys.
 
 ## Next Up
-Inspection requests (students requesting property viewings from landlords).
-
+Core MVP feature set is complete. Remaining work: broader Postman regression pass and final documentation polish.

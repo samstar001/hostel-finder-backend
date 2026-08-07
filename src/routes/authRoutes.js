@@ -1,6 +1,7 @@
 import express from 'express';
 import { upload } from '../config/cloudinaryUpload.js';
 import authMiddleware from '../middleware/auth.js';
+import { getMyInspectionRequests } from '../controllers/inspectionController.js';
 import {
   registerInitiate,
   registerVerifyOtp,
@@ -22,5 +23,6 @@ router.post('/forgot-password', forgotPassword);
 router.post('/verify-reset-otp', verifyResetOtp);
 router.post('/reset-password', resetPassword);
 router.post('/profile-picture', authMiddleware, upload.single('profilePicture'), uploadProfilePicture);
+router.get('/my-inspection-requests', authMiddleware, getMyInspectionRequests);
 
 export default router;

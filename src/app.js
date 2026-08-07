@@ -15,6 +15,7 @@ import listingRoutes from './routes/listingRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import inspectionRoutes from './routes/inspectionRoutes.js';
 
 const app = express();
 
@@ -35,8 +36,7 @@ app.use('/api/v1/listings', listingRoutes);
 app.use('/api/v1/listings/:id/reviews', reviewRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/listings/:id/reports', reportRoutes);
-// Future feature routes get mounted here as they're built, e.g:
-// app.use('/api/v1/listings', listingRoutes);
+app.use('/api/v1/listings/:id/inspection-requests', inspectionRoutes);
 
 // Catch-all for unmatched routes
 app.use((req, res) => {

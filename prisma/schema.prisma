@@ -145,13 +145,15 @@ model Report {
   @@map("reports")
 }
 model InspectionRequest {
-  id        Int               @id @default(autoincrement())
-  listingId Int               @map("listing_id")
-  listing   Listing           @relation(fields: [listingId], references: [id])
-  studentId Int               @map("student_id")
-  student   User              @relation(fields: [studentId], references: [id])
-  status    InspectionStatus  @default(pending)
-  createdAt DateTime          @default(now()) @map("created_at")
+  id              Int               @id @default(autoincrement())
+  listingId       Int               @map("listing_id")
+  listing         Listing           @relation(fields: [listingId], references: [id])
+  studentId       Int               @map("student_id")
+  student         User              @relation(fields: [studentId], references: [id])
+  requestedDate   DateTime          @map("requested_date")
+  message         String?
+  status          InspectionStatus  @default(pending)
+  createdAt       DateTime          @default(now()) @map("created_at")
 
   @@map("inspection_requests")
 }
